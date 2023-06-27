@@ -65,8 +65,8 @@ void function GamemodeGG_Init()
 
 	AddCallback_GGEarnMeterFull( OnGGEarnMeterFilled )
 
-    	// CUSTOM
-    	AddCallback_OnClientConnected(OnClientConnected)
+	// CUSTOM
+	AddCallback_OnClientConnected(OnClientConnected)
 
 	if( RandomInt( 100 ) == 1 ) // easter egg (enables house flies for everyone)
 	{
@@ -452,6 +452,7 @@ void function UpdateLoadout( entity player )
 	foreach ( entity weapon in player.GetOffhandWeapons() )
 		player.TakeWeaponNow( weapon.GetWeaponClassName() )
 
+	entity weaponEnt = null
 	if ( weapon.offhandSlot != -1)
 	{
 		player.GiveOffhandWeapon( weapon.weapon, weapon.offhandSlot, weapon.mods )
@@ -462,16 +463,19 @@ void function UpdateLoadout( entity player )
 			player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, [ "allow_as_primary" ] )
 
 		player.SetActiveWeaponByName( player.GetOffhandWeapon( OFFHAND_MELEE ).GetWeaponClassName() ) // Let the player use the melee in the primary slot, and then force equip it. Effectively gives them an empty hand.
+		weaponEnt = player.GetOffhandWeapon(weapon.offhandSlot)
 	}
 	else
 	{
-		player.GiveWeapon( weapon.weapon, weapon.mods )
+		weaponEnt = player.GiveWeapon( weapon.weapon, weapon.mods )
 
 		if( playerHSNames.find( player.GetPlayerName() ) == -1 || (player.GetPlayerName() in MeleeportKills && MeleeportKills[player.GetPlayerName()]>=20))
 			player.GiveOffhandWeapon( "melee_pilot_kunai", OFFHAND_MELEE )
 		else
 			player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE )
 	}
+	if (weapon.setupFunc != null)
+		thread weapon.setupFunc( player, weaponEnt )
 
     // Grapple
 	if( gnsOn && weapon.offhandSlot != 0 )
@@ -611,6 +615,7 @@ string function GetGunNameByID(int ID) {
 		case "mp_weapon_wingman" : return "b3 Wingman"
 		case "mp_weapon_defender" : return "Chargerifle"
 		case "mp_weapon_grenade_sonar" : return "Pulse Blade"
+		case "mp_titancore_laser_cannon" : return "Laser Core"
 		default: return "<Gun Not available>"
 	  }
 	return "<Gun Not available>"

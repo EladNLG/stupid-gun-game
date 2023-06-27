@@ -8,6 +8,7 @@ global struct GunGameWeapon
 	string weapon
 	array<string> mods = []
 	int offhandSlot = -1
+	void functionref( entity, entity ) setupFunc = null
 }
 
 struct {
@@ -53,6 +54,10 @@ void function CreateGamemodeGG()
 	    // setup guns
 
         // misc
+		GunGameWeapon ggLaserCore	= { weapon = "mp_titancore_laser_cannon", offhandSlot = 2, ... }
+		#if SERVER
+		ggLaserCore.setupFunc = LaserCore
+		#endif
         GunGameWeapon ggPeacekraber       = { weapon = "mp_weapon_peacekraber", ... }
         GunGameWeapon ggGunshipTurret     = { weapon = "mp_weapon_gunship_turret", ... }
         GunGameWeapon ggArena2            = { weapon = "mp_weapon_arena2", ... }
@@ -122,9 +127,10 @@ void function CreateGamemodeGG()
 
         // final
 	    GunGameWeapon ggChargerifle  = { weapon = "mp_weapon_defender",        mods = ["extended_ammo", "pas_fast_ads"], ... }
-	    GunGameWeapon ggPulse        = { weapon = "mp_weapon_grenade_sonar",   mods = [ "pas_power_cell", "amped_tacticals" ], offhandSlot = 0 }
+	    GunGameWeapon ggPulse        = { weapon = "mp_weapon_grenade_sonar",   mods = [ "pas_power_cell", "amped_tacticals" ], offhandSlot = 0, ... }
 
         // add guns
+		file.weapons.append(ggLaserCore)
         file.weapons.append(ggPeacekraber)
         file.weapons.append(ggGunshipTurret)
         file.weapons.append(ggArena2)
@@ -194,8 +200,8 @@ void function CreateGamemodeGG()
 		
 
 	    file.weapons.append(ggChargerifle)
-      file.weapons.append(ggSword)
-      file.weapons.append(ggShield)
+		file.weapons.append(ggSword)
+		file.weapons.append(ggShield)
 	    file.weapons.append(ggPulse)
 	}
 
@@ -248,3 +254,22 @@ GunGameWeapon function StringToGGWeapon( string ggWeaponString )
 
 	return ggWeapon
 }
+
+#if SERVER
+void function LaserCore( entity player, entity weapon )
+{
+	while (Time() < expect float(level.nv.gameStartTime) || Time() > expect float(level.nv.gameEndTime))
+		WaitFrame()
+	player.SetActiveWeaponByName( "mp_titancore_laser_cannon" )
+	NSSendInfoMessageToPlayer(player,"Use your melee to restart the laser!")
+	bool weaponActive = true
+	while (IsValid(weapon) && IsAlive(player))
+	{
+		if (player.GetActiveWeapon().GetWeaponClassName().find("melee") == 0)
+		{
+			player.SetActiveWeaponByName( "mp_titancore_laser_cannon" )
+		}
+		WaitFrame()
+	}
+}
+#endif
